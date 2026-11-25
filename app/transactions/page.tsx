@@ -1,12 +1,32 @@
+import { Suspense } from "react";
 import { prisma } from "@/lib/prisma";
 import { formatVND, getDateRange } from "@/lib/finance";
 import { transactionFilterSchema } from "@/lib/validation";
 
-export default async function TransactionsPage({
+// Kiểu của searchParams do Next tự sinh (là Promise chứa tham số trên URL)
+type SearchParams = PageProps<"/transactions">["searchParams"];
+
+// 1. Component cha: chỉ vẽ khung tĩnh + Suspense
+export default function TransactionsPage({
   searchParams,
 }: PageProps<"/transactions">) {
-  // Next 16: searchParams là Promise -> phải await
-  // URL sai (?type=abc) -> về bộ lọc mặc định
+  return (
+    <main className="grid max-w-md gap-4 p-8">
+      <h1 className="text-2xl font-bold">Giao dịch</h1>
+      <Suspense fallback={<p>Đang tải giao dịch...</p>}>
+        <TransactionList searchParams={searchParams} />
+      </Suspense>
+    </main>
+  );
+}
+
+// 2. Component con: nằm TRONG Suspense nên được phép đọc URL và gọi DB
+async function TransactionList({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) {
+  // URL sai (?type=abc) -> tự quay về bộ lọc mặc định
   const filter = transactionFilterSchema
     .catch({ range: "this-month" })
     .parse(await searchParams);
@@ -21,7 +41,7 @@ export default async function TransactionsPage({
   });
 
   return (
-    <main className="grid max-w-md gap-4 p-8">
+    <>
       <p>{rows.length} giao dịch</p>
       <ul>
         {rows.map((t) => (
@@ -30,6 +50,6 @@ export default async function TransactionsPage({
           </li>
         ))}
       </ul>
-    </main>
+    </>
   );
 }

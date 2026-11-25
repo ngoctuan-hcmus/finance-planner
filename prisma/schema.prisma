@@ -22,7 +22,11 @@ enum TransactionType {
 enum Category {
   FOOD
   TRANSPORT
+  ENTERTAINMENT
+  SHOPPING
+  BILLS
   SALARY
+  INVESTMENT
   OTHER
 }
 
@@ -48,6 +52,8 @@ model WishlistItem {
   cost      Int
   priority  Priority @default(MEDIUM)
   purchased Boolean  @default(false)
+  notifiedMilestone Int @default(0)
+  createdAt DateTime @default(now())
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

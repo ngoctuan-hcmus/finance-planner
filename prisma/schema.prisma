@@ -8,12 +8,64 @@ datasource db {
 }
 
 model User {
-  id           String         @id @default(cuid())
-  email        String         @unique
-  name         String
-  transactions Transaction[]
-  wishlist     WishlistItem[]
+  id            String         @id @default(cuid())
+  email         String         @unique
+  name          String
+  emailVerified Boolean        @default(false)
+  image         String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @default(now()) @updatedAt
+  sessions      Session[]
+  accounts      Account[]
+  transactions  Transaction[]
+  wishlist      WishlistItem[]
 }
+
+// ===== 3 bảng Better Auth cần =====
+model Session {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  expiresAt DateTime
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Account {
+  id                    String    @id @default(cuid())
+  accountId             String
+  providerId            String
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+}
+
 enum TransactionType {
   INCOME
   EXPENSE
@@ -35,6 +87,7 @@ enum Priority {
   MEDIUM
   HIGH
 }
+
 model Transaction {
   id          String          @id @default(cuid())
   type        TransactionType
@@ -42,18 +95,21 @@ model Transaction {
   description String
   category    Category        @default(OTHER)
   date        DateTime        @default(now())
+  createdAt   DateTime        @default(now())
   userId      String
   user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, date])
 }
 
 model WishlistItem {
-  id        String   @id @default(cuid())
-  name      String
-  cost      Int
-  priority  Priority @default(MEDIUM)
-  purchased Boolean  @default(false)
-  notifiedMilestone Int @default(0)
-  createdAt DateTime @default(now())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                String   @id @default(cuid())
+  name              String
+  cost              Int
+  priority          Priority @default(MEDIUM)
+  purchased         Boolean  @default(false)
+  notifiedMilestone Int      @default(0)
+  createdAt         DateTime @default(now())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { prisma } from "@/lib/prisma";
 import { formatVND, getDateRange } from "@/lib/finance";
 import { transactionFilterSchema } from "@/lib/validation";
+import { requireUser } from "@/lib/dal";
 
 // Kiểu của searchParams do Next tự sinh (là Promise chứa tham số trên URL)
 type SearchParams = PageProps<"/transactions">["searchParams"];
@@ -26,6 +27,8 @@ async function TransactionList({
 }: {
   searchParams: SearchParams;
 }) {
+  const user = await requireUser(); // chưa đăng nhập -> /login
+
   // URL sai (?type=abc) -> tự quay về bộ lọc mặc định
   const filter = transactionFilterSchema
     .catch({ range: "this-month" })
@@ -33,6 +36,7 @@ async function TransactionList({
 
   const rows = await prisma.transaction.findMany({
     where: {
+      userId: user.id, // CHỈ lấy giao dịch của chính user này
       date: getDateRange(filter.range),
       type: filter.type,
       category: filter.category,

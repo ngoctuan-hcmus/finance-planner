@@ -1,21 +1,24 @@
 import { Suspense } from 'react';
 import { prisma } from '@/lib/prisma';
 import { formatVND } from '@/lib/finance';
+import { requireUser } from '@/lib/dal';
 
 async function DashboardData() {
+  const user = await requireUser(); // chưa đăng nhập -> /login
+
   const [thu, chi, theo] = await Promise.all([
     prisma.transaction.aggregate({
       _sum: { amount: true },
-      where: { type: 'INCOME' },
+      where: { userId: user.id, type: 'INCOME' },
     }),
     prisma.transaction.aggregate({
       _sum: { amount: true },
-      where: { type: 'EXPENSE' },
+      where: { userId: user.id, type: 'EXPENSE' },
     }),
     prisma.transaction.groupBy({
       by: ['category'],
       _sum: { amount: true },
-      where: { type: 'EXPENSE' },
+      where: { userId: user.id, type: 'EXPENSE' },
       orderBy: { _sum: { amount: 'desc' } },
     }),
   ]);

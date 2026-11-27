@@ -1,6 +1,6 @@
 import * as z from "zod";
 import {
-  Category, TransactionType,
+  Category, Priority, TransactionType,
 } from "@/generated/prisma/enums";
 
 export const transactionSchema = z.object({
@@ -34,6 +34,35 @@ export function readValues(data: FormData): Values {
     fields.map((f) => [f, String(data.get(f) ?? "")]),
   );
 }
+
+// Schema validate cho Wishlist (Danh sách mong muốn)
+export const wishlistSchema = z.object({
+  name: z.string().trim()
+    .min(1, { error: "Nhập tên món đồ" })
+    .max(120, { error: "Tối đa 120 ký tự" }),
+  cost: z.coerce.number()
+    .int({ error: "Giá phải là số nguyên" })
+    .positive({ error: "Giá phải lớn hơn 0" }),
+  priority: z.enum(Priority,
+    { error: "Chọn mức ưu tiên" }),
+});
+type WishlistField = keyof z.infer<typeof wishlistSchema>;
+type WishlistValues = Partial<Record<WishlistField, string>>;
+
+export type WishlistFormState = {
+  ok?: boolean;
+  message?: string;
+  errors?: Partial<Record<WishlistField, string[]>>;
+  values?: WishlistValues;
+};
+
+export function readWishlistValues(data: FormData): WishlistValues {
+  const fields = Object.keys(wishlistSchema.shape);
+  return Object.fromEntries(
+    fields.map((f) => [f, String(data.get(f) ?? "")]),
+  );
+}
+
 // Bộ lọc đọc từ URL: /transactions?range=…&type=…
 export const RANGES =
   ["this-month", "last-month", "all"] as const;

@@ -1,4 +1,4 @@
-import type { Category, TransactionType } from "@/generated/prisma/enums";
+import type { Category, Priority, TransactionType } from "@/generated/prisma/enums";
 import type { Filters } from "@/lib/validation";
 
 const vnd = new Intl.NumberFormat('vi-VN', {
@@ -11,7 +11,7 @@ export function formatVND(amount: number) {
   return vnd.format(amount);
 }
 
-// Nhãn tiếng Việt cho 8 danh mục và 2 loại giao dịch
+// Nhãn tiếng Việt cho 8 danh mục, 2 loại giao dịch và 3 mức ưu tiên
 export const CATEGORY_LABELS: Record<Category, string> = {
   FOOD: "Ăn uống",
   TRANSPORT: "Di chuyển",
@@ -26,6 +26,12 @@ export const CATEGORY_LABELS: Record<Category, string> = {
 export const TYPE_LABELS: Record<TransactionType, string> = {
   INCOME: "Thu nhập",
   EXPENSE: "Chi tiêu",
+};
+
+export const PRIORITY_LABELS: Record<Priority, string> = {
+  LOW: "Thấp",
+  MEDIUM: "Trung bình",
+  HIGH: "Cao",
 };
 
 // Chuyển Date sang chuỗi YYYY-MM-DD cho ô <input type="date" />

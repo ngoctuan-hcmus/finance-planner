@@ -17,6 +17,7 @@ export async function SiteHeader() {
           <nav className="flex gap-4">
             <Link href="/dashboard">Dashboard</Link>
             <Link href="/transactions">Giao dịch</Link>
+            <Link href="/wishlist">Wishlist</Link>
           </nav>
           <div className="ml-auto flex items-center gap-3">
             <span className="text-sm">{user.name}</span>

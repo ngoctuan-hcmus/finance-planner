@@ -75,3 +75,39 @@ export function crossedMilestones(
 ): number[] {
   return MILESTONES.filter((m) => prev < m && next >= m);
 }
+
+// Tính xu hướng chi tiêu tháng này so với tháng trước (hàm thuần)
+export function compareMonths(prevExpense: number, currExpense: number) {
+  if (prevExpense <= 0) {
+    return {
+      diffPercent: currExpense > 0 ? 100 : 0,
+      trend: currExpense > 0 ? ("up" as const) : ("same" as const),
+      summary:
+        currExpense > 0
+          ? "Tháng trước chưa có chi tiêu để so sánh."
+          : "Hai tháng đều chưa có chi tiêu.",
+    };
+  }
+  const diffPercent = Math.round(
+    ((currExpense - prevExpense) / prevExpense) * 100,
+  );
+  if (diffPercent > 0) {
+    return {
+      diffPercent,
+      trend: "up" as const,
+      summary: `Chi tiêu tháng này tăng ${diffPercent}% so với tháng trước.`,
+    };
+  }
+  if (diffPercent < 0) {
+    return {
+      diffPercent,
+      trend: "down" as const,
+      summary: `Chi tiêu tháng này giảm ${Math.abs(diffPercent)}% so với tháng trước.`,
+    };
+  }
+  return {
+    diffPercent: 0,
+    trend: "same" as const,
+    summary: "Chi tiêu tháng này bằng với tháng trước.",
+  };
+}

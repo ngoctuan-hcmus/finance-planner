@@ -10,12 +10,25 @@ import {
   wishlistProgress,
 } from "@/lib/finance";
 import { ExpensePieChart } from "@/components/expense-pie-chart";
+import { MonthlyBarChart } from "@/components/monthly-bar-chart";
 import { MilestoneNotifier } from "@/components/milestone-notifier";
 
 async function DashboardData() {
   const user = await requireUser(); // chưa đăng nhập -> /login
 
-  const [thu, chi, theoThangNay, wishlist] = await Promise.all([
+  const thisMonthRange = getDateRange("this-month");
+  const lastMonthRange = getDateRange("last-month");
+
+  const [
+    thu,
+    chi,
+    theoThangNay,
+    wishlist,
+    thuThangTruoc,
+    chiThangTruoc,
+    thuThangNay,
+    chiThangNay,
+  ] = await Promise.all([
     prisma.transaction.aggregate({
       _sum: { amount: true },
       where: { userId: user.id, type: "INCOME" },
@@ -30,13 +43,29 @@ async function DashboardData() {
       where: {
         userId: user.id,
         type: "EXPENSE",
-        date: getDateRange("this-month"),
+        date: thisMonthRange,
       },
       orderBy: { _sum: { amount: "desc" } },
     }),
     prisma.wishlistItem.findMany({
       where: { userId: user.id },
       orderBy: { createdAt: "desc" },
+    }),
+    prisma.transaction.aggregate({
+      _sum: { amount: true },
+      where: { userId: user.id, type: "INCOME", date: lastMonthRange },
+    }),
+    prisma.transaction.aggregate({
+      _sum: { amount: true },
+      where: { userId: user.id, type: "EXPENSE", date: lastMonthRange },
+    }),
+    prisma.transaction.aggregate({
+      _sum: { amount: true },
+      where: { userId: user.id, type: "INCOME", date: thisMonthRange },
+    }),
+    prisma.transaction.aggregate({
+      _sum: { amount: true },
+      where: { userId: user.id, type: "EXPENSE", date: thisMonthRange },
     }),
   ]);
 
@@ -89,6 +118,25 @@ async function DashboardData() {
             </li>
           ))}
         </ul>
+      </section>
+
+      {/* Báo cáo so sánh các tháng (Biểu đồ cột + Xu hướng chi tiêu) */}
+      <section className="grid gap-4 rounded border p-4">
+        <h2 className="text-lg font-semibold">
+          Báo cáo so sánh thu chi các tháng
+        </h2>
+        <MonthlyBarChart
+          lastMonth={{
+            label: "Tháng trước",
+            income: thuThangTruoc._sum.amount ?? 0,
+            expense: chiThangTruoc._sum.amount ?? 0,
+          }}
+          thisMonth={{
+            label: "Tháng này",
+            income: thuThangNay._sum.amount ?? 0,
+            expense: chiThangNay._sum.amount ?? 0,
+          }}
+        />
       </section>
 
       {/* Tiến độ các món Wishlist */}

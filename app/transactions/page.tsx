@@ -6,6 +6,7 @@ import { requireUser } from "@/lib/dal";
 import { TransactionForm } from "./transaction-form";
 import { TransactionFilters } from "./transactions-filters";
 import { TransactionItem } from "./transaction-item";
+import { CsvTools } from "./csv-tools";
 
 // Kiểu của searchParams do Next tự sinh (là Promise chứa tham số trên URL)
 type SearchParams = PageProps<"/transactions">["searchParams"];
@@ -16,7 +17,10 @@ export default function TransactionsPage({
 }: PageProps<"/transactions">) {
   return (
     <main className="mx-auto grid w-full max-w-2xl gap-6 p-8">
-      <h1 className="text-2xl font-bold">Quản lý giao dịch</h1>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h1 className="text-2xl font-bold">Quản lý giao dịch</h1>
+        <CsvTools />
+      </div>
       <section className="grid gap-2">
         <h2 className="font-semibold">Thêm giao dịch mới</h2>
         <TransactionForm />

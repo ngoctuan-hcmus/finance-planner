@@ -75,3 +75,57 @@ export const transactionFilterSchema = z.object({
 
 export type Filters =
   z.infer<typeof transactionFilterSchema>;
+
+// Đọc và kiểm tra định dạng CSV giao dịch (date,type,category,amount,description)
+export function parseTransactionsCsv(csvText: string) {
+  const lines = csvText
+    .replace(/^\uFEFF/, "")
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter(Boolean);
+
+  if (lines.length < 2) {
+    return {
+      ok: false as const,
+      error: "File CSV trống hoặc thiếu dòng dữ liệu",
+    };
+  }
+
+  const header = lines[0].toLowerCase();
+  if (header !== "date,type,category,amount,description") {
+    return {
+      ok: false as const,
+      error:
+        "Dòng tiêu đề CSV phải là: date,type,category,amount,description",
+    };
+  }
+
+  const rows: z.infer<typeof transactionSchema>[] = [];
+  for (let i = 1; i < lines.length; i++) {
+    const parts = lines[i].split(",");
+    if (parts.length < 5) {
+      return {
+        ok: false as const,
+        error: `Dòng ${i + 1} thiếu cột dữ liệu`,
+      };
+    }
+    const [date, type, category, amount, ...descParts] = parts;
+    const description = descParts.join(",").replace(/^"|"$/g, "").trim();
+    const parsed = transactionSchema.safeParse({
+      date: date.trim(),
+      type: type.trim(),
+      category: category.trim(),
+      amount: amount.trim(),
+      description,
+    });
+    if (!parsed.success) {
+      return {
+        ok: false as const,
+        error: `Dòng ${i + 1} sai định dạng dữ liệu`,
+      };
+    }
+    rows.push(parsed.data);
+  }
+
+  return { ok: true as const, rows };
+}

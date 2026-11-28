@@ -1,15 +1,7 @@
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/dal";
-import { SignOutButton } from "@/components/sign-out-button";
+import { SignOutButton, UserProfileBadge } from "@/components/sign-out-button";
 import { ThemeToggle } from "@/components/theme-provider";
-
-function getInitials(name: string) {
-  const parts = name.trim().split(/\s+/);
-  if (parts.length >= 2) {
-    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-  }
-  return name.slice(0, 2).toUpperCase();
-}
 
 // Server Component: đọc session để biết đã đăng nhập hay chưa
 export async function SiteHeader() {
@@ -50,12 +42,7 @@ export async function SiteHeader() {
             </Link>
           </nav>
           <div className="ml-auto flex flex-wrap items-center gap-2.5">
-            <div className="flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold">
-              <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-600 text-[10px] font-bold text-white">
-                {getInitials(user.name)}
-              </span>
-              <span>{user.name}</span>
-            </div>
+            <UserProfileBadge name={user.name} email={user.email} />
             <ThemeToggle />
             <SignOutButton />
           </div>

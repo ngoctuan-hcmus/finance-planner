@@ -33,7 +33,15 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <Suspense fallback={<header className="border-b p-4">Finance Planner</header>}>
             <SiteHeader />
           </Suspense>
-          {children}
+          <div className="flex-1 flex flex-col">{children}</div>
+          <footer className="mt-auto border-t px-6 py-3 text-xs flex flex-wrap items-center justify-between gap-2 opacity-80">
+            <span>
+              <strong>Finance Planner</strong> · Đồ án cá nhân môn PHY10615
+            </span>
+            <span>
+              Thực hiện: <strong>Nguyễn Ngọc Tuấn</strong>
+            </span>
+          </footer>
         </AppProviders>
       </body>
     </html>

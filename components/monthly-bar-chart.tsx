@@ -49,8 +49,8 @@ export function MonthlyBarChart({
             <YAxis tickFormatter={(v) => `${Math.round(Number(v) / 1_000_000)}tr`} />
             <Tooltip formatter={(val) => formatVND(Number(val))} />
             <Legend />
-            <Bar dataKey="income" name="Thu nhập" fill="#16a34a" />
-            <Bar dataKey="expense" name="Chi tiêu" fill="#dc2626" />
+            <Bar dataKey="income" name="Thu nhập" fill="#16a34a" isAnimationActive={false} />
+            <Bar dataKey="expense" name="Chi tiêu" fill="#dc2626" isAnimationActive={false} />
           </BarChart>
         </ResponsiveContainer>
       </div>

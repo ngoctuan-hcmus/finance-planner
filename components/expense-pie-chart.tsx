@@ -16,13 +16,13 @@ export type CategoryExpense = {
 };
 
 const COLORS = [
+  "#059669",
   "#2563eb",
-  "#16a34a",
   "#d97706",
   "#dc2626",
-  "#9333ea",
   "#0891b2",
   "#4f46e5",
+  "#65a30d",
   "#64748b",
 ];
 
@@ -54,15 +54,14 @@ export function ExpensePieChart({ data }: { data: CategoryExpense[] }) {
               cx="50%"
               cy="50%"
               outerRadius={90}
+              isAnimationActive={false}
               label={({ name, percent }) => `${name} (${percent}%)`}
             >
               {chartData.map((entry, idx) => (
                 <Cell key={entry.name} fill={COLORS[idx % COLORS.length]} />
               ))}
             </Pie>
-            <Tooltip
-              formatter={(val) => formatVND(Number(val))}
-            />
+            <Tooltip formatter={(val) => formatVND(Number(val))} />
             <Legend />
           </PieChart>
         </ResponsiveContainer>

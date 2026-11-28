@@ -12,7 +12,7 @@ async function main() {
 
   // Tạo user qua Better Auth để mật khẩu được băm (hash) đúng chuẩn
   const { user } = await auth.api.signUpEmail({
-    body: { email: EMAIL, password: PASSWORD, name: 'Sinh viên demo' },
+    body: { email: EMAIL, password: PASSWORD, name: 'Nguyễn Ngọc Tuấn' },
   });
   const userId = user.id;
 

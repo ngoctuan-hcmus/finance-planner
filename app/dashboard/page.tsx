@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/dal";
 import {
   CATEGORY_LABELS,
+  crossedMilestones,
   formatVND,
   getDateRange,
   PRIORITY_LABELS,
@@ -19,93 +20,94 @@ async function DashboardData() {
   const thisMonthRange = getDateRange("this-month");
   const lastMonthRange = getDateRange("last-month");
 
-  const [
-    thu,
-    chi,
-    theoThangNay,
-    wishlist,
-    thuThangTruoc,
-    chiThangTruoc,
-    thuThangNay,
-    chiThangNay,
-  ] = await Promise.all([
-    prisma.transaction.aggregate({
-      _sum: { amount: true },
-      where: { userId: user.id, type: "INCOME" },
-    }),
-    prisma.transaction.aggregate({
-      _sum: { amount: true },
-      where: { userId: user.id, type: "EXPENSE" },
-    }),
-    prisma.transaction.groupBy({
-      by: ["category"],
-      _sum: { amount: true },
-      where: {
-        userId: user.id,
-        type: "EXPENSE",
-        date: thisMonthRange,
-      },
-      orderBy: { _sum: { amount: "desc" } },
-    }),
-    prisma.wishlistItem.findMany({
-      where: { userId: user.id },
-      orderBy: { createdAt: "desc" },
-    }),
-    prisma.transaction.aggregate({
-      _sum: { amount: true },
-      where: { userId: user.id, type: "INCOME", date: lastMonthRange },
-    }),
-    prisma.transaction.aggregate({
-      _sum: { amount: true },
-      where: { userId: user.id, type: "EXPENSE", date: lastMonthRange },
-    }),
-    prisma.transaction.aggregate({
-      _sum: { amount: true },
-      where: { userId: user.id, type: "INCOME", date: thisMonthRange },
-    }),
-    prisma.transaction.aggregate({
-      _sum: { amount: true },
-      where: { userId: user.id, type: "EXPENSE", date: thisMonthRange },
-    }),
-  ]);
+  // Gộp 8 câu truy vấn thành 4 câu groupBy chạy song song để tăng tốc tải trang
+  const [allByType, lastMonthByType, thisMonthByCatType, wishlist] =
+    await Promise.all([
+      prisma.transaction.groupBy({
+        by: ["type"],
+        _sum: { amount: true },
+        where: { userId: user.id },
+      }),
+      prisma.transaction.groupBy({
+        by: ["type"],
+        _sum: { amount: true },
+        where: { userId: user.id, date: lastMonthRange },
+      }),
+      prisma.transaction.groupBy({
+        by: ["type", "category"],
+        _sum: { amount: true },
+        where: { userId: user.id, date: thisMonthRange },
+      }),
+      prisma.wishlistItem.findMany({
+        where: { userId: user.id },
+        orderBy: { createdAt: "desc" },
+      }),
+    ]);
 
-  const tongThu = thu._sum.amount ?? 0;
-  const tongChi = chi._sum.amount ?? 0;
+  const tongThu =
+    allByType.find((r) => r.type === "INCOME")?._sum.amount ?? 0;
+  const tongChi =
+    allByType.find((r) => r.type === "EXPENSE")?._sum.amount ?? 0;
   const soDu = tongThu - tongChi;
 
-  const pieData = theoThangNay.map((d) => ({
-    category: d.category,
-    amount: d._sum.amount ?? 0,
-  }));
+  const thuThangTruoc =
+    lastMonthByType.find((r) => r.type === "INCOME")?._sum.amount ?? 0;
+  const chiThangTruoc =
+    lastMonthByType.find((r) => r.type === "EXPENSE")?._sum.amount ?? 0;
 
+  let thuThangNay = 0;
+  let chiThangNay = 0;
+  const pieData: {
+    category: (typeof thisMonthByCatType)[number]["category"];
+    amount: number;
+  }[] = [];
+
+  for (const r of thisMonthByCatType) {
+    const amt = r._sum.amount ?? 0;
+    if (r.type === "INCOME") {
+      thuThangNay += amt;
+    } else {
+      chiThangNay += amt;
+      pieData.push({ category: r.category, amount: amt });
+    }
+  }
+  pieData.sort((a, b) => b.amount - a.amount);
+
+  // Chỉ gọi Server Action thông báo mốc khi thực sự có món đồ vừa vượt mốc mới
+  const hasNewMilestone = wishlist.some(
+    (w) =>
+      !w.purchased &&
+      crossedMilestones(w.notifiedMilestone, wishlistProgress(soDu, w.cost))
+        .length > 0,
+  );
   const trigger = `${soDu}-${wishlist.map((w) => `${w.id}:${w.cost}`).join(",")}`;
 
   return (
     <div className="grid gap-8">
-      <MilestoneNotifier trigger={trigger} />
+      {hasNewMilestone && <MilestoneNotifier trigger={trigger} />}
 
       {/* 3 thẻ tổng quan, Số dư hiển thị nổi bật */}
       <section className="grid gap-4 sm:grid-cols-3">
-        <div className="rounded border p-4">
+        <div className="rounded-xl border p-4">
           <p className="text-sm opacity-70">Tổng thu</p>
           <p className="text-xl font-semibold text-green-600">
             {formatVND(tongThu)}
           </p>
         </div>
-        <div className="rounded border p-4">
+        <div className="rounded-xl border p-4">
           <p className="text-sm opacity-70">Tổng chi</p>
           <p className="text-xl font-semibold text-red-600">
             {formatVND(tongChi)}
           </p>
         </div>
-        <div className="rounded border-2 border-black p-4 dark:border-white">
+        <div className="rounded-xl border-2 border-black p-4 dark:border-white">
           <p className="text-sm opacity-70">Số dư hiện tại</p>
           <p className="text-2xl font-bold">{formatVND(soDu)}</p>
         </div>
       </section>
 
       {/* Biểu đồ tròn chi tiêu tháng này + danh sách tóm tắt */}
-      <section className="grid gap-4 rounded border p-4">
+      <section className="grid gap-4 rounded-xl border p-4">
         <h2 className="text-lg font-semibold">
           Cơ cấu chi tiêu tháng hiện tại
         </h2>
@@ -121,26 +123,26 @@ async function DashboardData() {
       </section>
 
       {/* Báo cáo so sánh các tháng (Biểu đồ cột + Xu hướng chi tiêu) */}
-      <section className="grid gap-4 rounded border p-4">
+      <section className="grid gap-4 rounded-xl border p-4">
         <h2 className="text-lg font-semibold">
           Báo cáo so sánh thu chi các tháng
         </h2>
         <MonthlyBarChart
           lastMonth={{
             label: "Tháng trước",
-            income: thuThangTruoc._sum.amount ?? 0,
-            expense: chiThangTruoc._sum.amount ?? 0,
+            income: thuThangTruoc,
+            expense: chiThangTruoc,
           }}
           thisMonth={{
             label: "Tháng này",
-            income: thuThangNay._sum.amount ?? 0,
-            expense: chiThangNay._sum.amount ?? 0,
+            income: thuThangNay,
+            expense: chiThangNay,
           }}
         />
       </section>
 
       {/* Tiến độ các món Wishlist */}
-      <section className="grid gap-4 rounded border p-4">
+      <section className="grid gap-4 rounded-xl border p-4">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">Tiến độ mục tiêu (Wishlist)</h2>
           <Link href="/wishlist" className="text-sm underline">

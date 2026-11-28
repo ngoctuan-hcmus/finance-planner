@@ -91,8 +91,8 @@ export function UserProfileBadge({
               <dd className="font-semibold text-right break-all">{email}</dd>
             </div>
             <div className="flex justify-between gap-2">
-              <dt className="opacity-70">Đồ án môn:</dt>
-              <dd className="font-semibold text-right">PHY10615</dd>
+              <dt className="opacity-70">Đơn vị:</dt>
+              <dd className="font-semibold text-right">HCMUS,VNU-HCM</dd>
             </div>
             <div className="flex justify-between gap-2">
               <dt className="opacity-70">Trạng thái:</dt>

@@ -3,12 +3,27 @@ import {
   Category, Priority, TransactionType,
 } from "@/generated/prisma/enums";
 
+// Nếu người dùng nhập số có dấu chấm phân cách hàng nghìn (vd: "1.500.000")
+// thì bỏ dấu chấm trước khi ép kiểu sang số nguyên
+function cleanMoneyInput(val: unknown) {
+  if (typeof val === "string") {
+    const trimmed = val.trim();
+    if (/^\d{1,3}(\.\d{3})+$/.test(trimmed)) {
+      return trimmed.replace(/\./g, "");
+    }
+  }
+  return val;
+}
+
 export const transactionSchema = z.object({
   type: z.enum(TransactionType,
     { error: "Chọn loại giao dịch" }),
-  amount: z.coerce.number()
-    .int({ error: "Phải là số nguyên" })
-    .positive({ error: "Phải lớn hơn 0" }),
+  amount: z.preprocess(
+    cleanMoneyInput,
+    z.coerce.number()
+      .int({ error: "Phải là số nguyên" })
+      .positive({ error: "Phải lớn hơn 0" }),
+  ),
   description: z.string().trim()
     .min(1, { error: "Nhập mô tả" })
     .max(120, { error: "Tối đa 120 ký tự" }),
@@ -40,9 +55,12 @@ export const wishlistSchema = z.object({
   name: z.string().trim()
     .min(1, { error: "Nhập tên món đồ" })
     .max(120, { error: "Tối đa 120 ký tự" }),
-  cost: z.coerce.number()
-    .int({ error: "Giá phải là số nguyên" })
-    .positive({ error: "Giá phải lớn hơn 0" }),
+  cost: z.preprocess(
+    cleanMoneyInput,
+    z.coerce.number()
+      .int({ error: "Giá phải là số nguyên" })
+      .positive({ error: "Giá phải lớn hơn 0" }),
+  ),
   priority: z.enum(Priority,
     { error: "Chọn mức ưu tiên" }),
 });
